@@ -1,0 +1,126 @@
+
+
+function [A]=elemrow1(B,i,j)
+% ELEMROW1 performs a type 1 operation::
+% returns a matrix A which is matrix B
+% with rows i and j interchanged
+% To call this function type:
+% A=elemrow1(B,i,j)
+%--------------------------------------
+[m,n]=size(B);
+A=B;
+A(i,1:n)=B(j,1:n);
+A(j,1:n)=B(i,1:n);
+endfunction
+
+
+function [A]=elemrow2(B,i,c)
+% ELEMROW2 performs a type 2 operation::
+% returns a matrix A which is matrix B
+% with row i multiplied by the constant c.
+% To call this function type:
+% A=elemrow2(B,i,c)
+%--------------------------------------
+[m,n]=size(B);
+A=B;
+A(i,1:n)=B(i,1:n)*c;
+endfunction
+
+function [A]=elemrow3(B,i,j,c)
+% ELEMROW3 performs a type 3 operation::
+% returns a matrix A which is matrix B
+% with row i multiplied by the constant c
+% added to row j.
+% To call this function type:
+% A=elemrow3(B,i,j,c)
+%--------------------------------------
+[m,n]=size(B);
+A=B;
+A(j,1:n)=B(i,1:n)*c + B(j,1:n);
+endfunction
+
+### M A I N   S C R I P T ###
+# Define our 4x4 Matrix
+
+A=[ -4 -9 -3 6
+ -1 3 5 4
+ -7 -1 -3 -5
+ -5 4 9 -7]
+
+# Use a permutation matrix to swap rows
+# 1 and 3 for partial pivoting
+P1 = [0 0 1 0;
+ 0 1 0 0;
+ 1 0 0 0;
+ 0 0 0 1]
+
+# Keep up with permuted matrix A in U
+U=P1*A
+
+# Using the permuted matrix, build the 
+# first elementary Gaussian transformation
+# matrix to hold the row operations. 
+# Remember to start with the identity matrix. 
+E1=eye(4)
+E1(2,1)=-U(2,1)/U(1,1)
+E1(3,1)=-U(3,1)/U(1,1)
+E1(4,1)=-U(4,1)/U(1,1)
+
+# Carry out the opertions on the permuted A matrix
+U=elemrow3(U,1,2,E1(2,1))
+U=elemrow3(U,1,3,E1(3,1))
+U=elemrow3(U,1,4,E1(4,1))
+
+# Build the second permutaton matrix to  
+# now swap rows 2 and 3 to put element of column
+# with maximum absolute value in pivot position
+P2=[1 0 0 0; 
+ 0 0 1 0; 
+ 0 1 0 0;
+ 0 0 0 1]
+
+#Apply permutation
+U=P2*U
+
+# Build second elementary Gaussian transformation
+# matrix
+E2=eye(4)
+E2(3,2)=-U(3,2)/U(2,2)
+E2(4,2)=-U(4,2)/U(2,2)
+
+# Carry out row reduction eleminations
+U=elemrow3(U,2,3,E2(3,2))
+U=elemrow3(U,2,4,E2(4,2))
+
+# Build and apply the third permutation matrix to
+# swap out rows 3 and 4
+P3=[1 0 0 0; 
+0 1 0 0; 
+0 0 0 1;
+0 0 1 0]
+U=P3*U
+
+# Build the third elementary gaussian transformation
+# matrix.
+E3=eye(4)
+E3(4,3)=-U(4,3)/U(3,3)
+# Carry out row reductions
+U=elemrow3(U,3,4,E3(4,3))
+
+# Building U is complete, now focus on constructing L
+# MP is the operator containing all products of the
+# elementary Gaussian transformation matrices and their
+# associated permutation matrices.  This is equal to
+# the INVERSE of L, but contains all of the permutations. 
+MP=E3*P3*E2*P2*E1*P1
+
+# The inverse of the P matrix can be constructed by taking the products
+# of the inverses of the permutation matrices 
+Pinv=inv(P1)*inv(P2)*inv(P3)
+
+# To recover just L I have to back out the permutations on
+# the INVERSE of L that was computed earlier as MP
+L=inv(P3)*inv(P2)*inv(P1)*inv(MP)
+# Now I have all three independently, so I can compute
+# the product A = PLU
+Pinv*L*U
